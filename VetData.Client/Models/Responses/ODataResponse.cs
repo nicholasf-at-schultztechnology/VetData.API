@@ -1,4 +1,3 @@
-
 namespace VetData.Client.Models.Responses;
 
 public record ODataResponse<T>

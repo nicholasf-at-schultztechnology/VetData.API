@@ -1,3 +1,14 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using VetData.Client.Models;
+using VetData.Client.Configuration;
+using VetData.Client.Models.SearchParams;
+using VetData.Client.Helpers;
+using VetData.Client.Exceptions;
+using VetData.Client.Models.Responses;
+using System.Net.Http.Json;
 
 namespace VetData.Client.Services;
 
@@ -23,9 +34,9 @@ public class VetDataClient : IVetDataClient
         try
         {
             var response = await _httpClient.GetAsync(
-                "InstallationList", 
+                "InstallationList",
                 cancellationToken);
-            
+
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content
@@ -41,17 +52,15 @@ public class VetDataClient : IVetDataClient
         }
     }
 
-    public async Task<IReadOnlyList<ClientRecord>> GetClientsAsync(
-        ClientSearchParams searchParams,
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ClientRecord>> GetClientsAsync(ClientSearchParams searchParams, CancellationToken cancellationToken = default)
     {
         try
         {
             var query = BuildODataQuery(searchParams);
             var response = await _httpClient.GetAsync(
-                $"Clients{query}", 
+                $"Clients{query}",
                 cancellationToken);
-            
+
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content
