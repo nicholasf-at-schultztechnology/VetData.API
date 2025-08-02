@@ -10,15 +10,18 @@ dotnet add package VetData.Client
 
 ## Quick Start
 
-1. Add configuration to your appsettings.json:
+1. Add authentication configuration to your appsettings.json:
 ```json
 {
-  "VetData": {
-    "BaseUrl": "https://api.vetdata.net/v2",
-    "UserName": "your-username",
-    "Password": "your-password",
-    "InstallationId": "your-installation-id",
-    "Timeout": "00:00:30"
+  "VetDataAuth": {
+    "Username": "your-username",
+    "Password": "your-password"
+  },
+  "VetDataClient": {
+    "BaseUrl": "https://api.vetdata.com/",
+    "Timeout": "00:00:30",
+    "UserName": "your-api-username",
+    "Password": "your-api-password"
   }
 }
 ```
@@ -55,8 +58,18 @@ public class ClientService
 }
 ```
 
+## Authentication
+
+The library implements a robust authentication system with the following features:
+
+- Token-based authentication with automatic token refresh
+- Rate limiting to prevent API throttling (10 requests per minute)
+- Automatic retry on token expiration
+- Concurrent request handling with proper locking mechanisms
+
 ## Key Components
 
+- **AuthenticationService**: Handles token management and authentication
 - **VetDataClient**: Core client implementation for API communication
 - **ClientSearchParams**: Strongly-typed search parameters for client queries
 - **OData Query Builder**: Type-safe OData query construction
@@ -80,8 +93,9 @@ public class ClientService
 ## Requirements
 
 - .NET 6.0 or higher
-- Valid VetData API credentials
-- Installation ID from VetData
+- Valid VetData authentication credentials
+- Valid API credentials
+- Proper configuration in appsettings.json
 
 ## Contributing
 

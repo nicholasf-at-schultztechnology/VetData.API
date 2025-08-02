@@ -9,34 +9,73 @@ using VetData.Client.Helpers;
 using VetData.Client.Exceptions;
 using VetData.Client.Models.Responses;
 using System.Net.Http.Json;
+using System.Net;
+using System.Net.Http.Headers;
+using VetData.Client.Services.Auth;
 
 namespace VetData.Client.Services;
 
 public class VetDataClient : IVetDataClient
 {
     private readonly HttpClient _httpClient;
+    private readonly IAuthenticationService _authService;
     private readonly ILogger<VetDataClient> _logger;
-    private readonly VetDataClientOptions _options;
+    private const int MaxRetries = 1;
 
     public VetDataClient(
         HttpClient httpClient,
         IOptions<VetDataClientOptions> options,
+        IAuthenticationService authService,
         ILogger<VetDataClient> logger)
     {
         _httpClient = httpClient;
-        _options = options.Value;
+        _authService = authService;
         _logger = logger;
+    }
+
+    private async Task<T> ExecuteWithRetryAsync<T>(
+        Func<string, Task<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        var attempts = 0;
+        while (true)
+        {
+            try
+            {
+                var token = await _authService
+                    .GetAccessTokenAsync(cancellationToken);
+                return await operation(token);
+            }
+            catch (HttpRequestException ex)
+                when (ex.StatusCode == HttpStatusCode.Unauthorized
+                      && attempts < MaxRetries)
+            {
+                attempts++;
+                _logger.LogWarning(
+                    "Token expired during request, attempting retry {Attempt} of {MaxRetries}",
+                    attempts, MaxRetries);
+                continue;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Request failed");
+                throw;
+            }
+        }
     }
 
     public async Task<IReadOnlyList<InstallationListRecord>> GetInstallationsAsync(
         CancellationToken cancellationToken = default)
     {
-        try
+        return await ExecuteWithRetryAsync(async (token) =>
         {
-            var response = await _httpClient.GetAsync(
-                "InstallationList",
-                cancellationToken);
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get, "InstallationList");
+            request.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
 
+            using var response = await _httpClient
+                .SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content
@@ -44,12 +83,7 @@ public class VetDataClient : IVetDataClient
                     cancellationToken: cancellationToken);
 
             return result ?? Array.Empty<InstallationListRecord>();
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _logger.LogError(ex, "Error retrieving installations");
-            throw new VetDataException("Failed to retrieve installations", ex);
-        }
+        }, cancellationToken);
     }
 
     public async Task<IReadOnlyList<ClientRecord>> GetClientsAsync(ClientSearchParams searchParams, CancellationToken cancellationToken = default)
