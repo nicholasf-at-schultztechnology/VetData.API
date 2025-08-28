@@ -120,6 +120,10 @@ public class VetDataClient : IVetDataClient
         if (!string.IsNullOrEmpty(searchParams.Email))
             queryBuilder.AddFilter($"Emails/any(e: contains(e.Address,'{searchParams.Email}'))");
 
+        // Below may not actually work - needs testing with real data
+        if (!string.IsNullOrEmpty(searchParams.Phone))
+            queryBuilder.AddFilter($"Phones/any(p: contains(p.PhoneNumber,'{searchParams.Phone}'))");
+
         if (searchParams.IncludePhones)
             queryBuilder.AddExpand("Phones,ClientPatientRelationships/Patient");
 

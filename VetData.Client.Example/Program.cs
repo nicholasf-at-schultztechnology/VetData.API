@@ -64,8 +64,9 @@ class VetDataConsoleApp
             Console.WriteLine("1. List Installations");
             Console.WriteLine("2. Search Clients by Last Name");
             Console.WriteLine("3. Search Clients by Email");
-            Console.WriteLine("4. Get Client Details with Related Data");
-            Console.WriteLine("5. Exit");
+            Console.WriteLine("4. Search Clients by Phone Number");
+            Console.WriteLine("5. Get Client Details with Related Data");
+            Console.WriteLine("6. Exit");
 
             Console.Write("\nEnter your choice (1-5): ");
             var choice = Console.ReadLine();
@@ -84,9 +85,13 @@ class VetDataConsoleApp
                         await SearchClientsByEmailAsync();
                         break;
                     case "4":
+                        await SearchClientByPhoneNumberAsync();
+                        break;
+                    case "5":   
                         await GetClientDetailsAsync();
                         break;
-                    case "5":
+                    case "6":
+                        Console.WriteLine("Exiting...");
                         return;
                     default:
                         Console.WriteLine("Invalid choice. Please try again.");
@@ -103,11 +108,35 @@ class VetDataConsoleApp
         }
     }
 
+    private async Task SearchClientByPhoneNumberAsync()
+    {
+        Console.Write("\nEnter phone number to search: ");
+        var phoneNumber = Console.ReadLine();
+
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            Console.WriteLine("Phone number is required.");
+            return;
+        }
+
+        var searchParams = new ClientSearchParams
+        {
+            Phone = phoneNumber,
+            IncludePhones = true,
+            Take = 10
+        };
+
+        Console.WriteLine("\nSearching clients...");
+        var clients = await _client.GetClientsAsync(searchParams);
+
+        DisplayClients(clients);
+    }
+
     private async Task ListInstallationsAsync()
     {
         Console.WriteLine("\nRetrieving installations...");
         var installations = await _client.GetInstallationsAsync();
-        
+
         Console.WriteLine($"\nFound {installations.Count} installation(s):");
         foreach (var install in installations)
         {
@@ -136,7 +165,7 @@ class VetDataConsoleApp
 
         Console.WriteLine("\nSearching clients...");
         var clients = await _client.GetClientsAsync(searchParams);
-        
+
         DisplayClients(clients);
     }
 
@@ -160,7 +189,7 @@ class VetDataConsoleApp
 
         Console.WriteLine("\nSearching clients...");
         var clients = await _client.GetClientsAsync(searchParams);
-        
+
         DisplayClients(clients);
     }
 
@@ -184,19 +213,19 @@ class VetDataConsoleApp
 
         Console.WriteLine("\nRetrieving client details...");
         var clients = await _client.GetClientsAsync(searchParams);
-        
+
         DisplayClients(clients, detailed: true);
     }
 
     private void DisplayClients(IReadOnlyList<ClientRecord> clients, bool detailed = false)
     {
         Console.WriteLine($"\nFound {clients.Count} client(s):");
-        
+
         foreach (var client in clients)
         {
             Console.WriteLine($"\n- {client.FirstName} {client.LastName}");
             Console.WriteLine($"  Account ID: {client.AccountId}");
-            
+
             if (client.Phones.Any())
             {
                 Console.WriteLine("  Phone Numbers:");
