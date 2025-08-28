@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 using VetData.Client.Configuration;
 using VetData.Client.Models;
 using VetData.Client.Models.SearchParams;
 using VetData.Client.Services;
+using Microsoft.Extensions.Configuration;
 
 class Program
 {
